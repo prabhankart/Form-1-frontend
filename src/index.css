@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-800 antialiased;
+  }
+
+  /* Premium styles for all input fields */
+  input[type="text"],
+  input[type="number"],
+  textarea,
+  select {
+    @apply w-full p-3 bg-slate-100 border-2 border-slate-200 rounded-lg shadow-sm transition-all duration-200;
+    @apply focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white outline-none;
+    @apply font-medium text-slate-800 placeholder:text-slate-400;
+  }
+}
+
+/* Animated Gradient Background for the landing page */
+.background-gradient {
+  background: linear-gradient(135deg, #020617, #0f172a, #1e293b);
+  background-size: 200% 200%;
+  animation: gradient-animation 20s ease infinite;
+}
+
+@keyframes gradient-animation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
