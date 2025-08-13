@@ -1,25 +1,62 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom'; // Import useNavigate
 import QuestionEditor from '../components/QuestionEditor';
-import { FileType, MessageSquareQuote, CheckSquare } from 'lucide-react';
+import { FileType, MessageSquareQuote, CheckSquare, Copy, ExternalLink, X } from 'lucide-react';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 
+// New Share Modal Component
+const ShareModal = ({ formId, onClose }) => {
+    const shareUrl = `${window.location.origin}/form/${formId}`;
+
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            alert('Link copied to clipboard!');
+        });
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full relative">
+                <button onClick={onClose} className="absolute top-4 right-4 p-2 text-slate-500 hover:bg-slate-100 rounded-full">
+                    <X size={20} />
+                </button>
+                <h2 className="text-2xl font-bold text-slate-800">Form Saved!</h2>
+                <p className="mt-2 text-slate-600">Your form is ready to be shared. Anyone with the link can view and respond.</p>
+                <div className="mt-6">
+                    <label className="font-semibold text-sm">Shareable Link</label>
+                    <div className="flex items-center gap-2 mt-1">
+                        <input type="text" readOnly value={shareUrl} className="bg-slate-100" />
+                        <button onClick={copyToClipboard} className="p-3 bg-slate-200 rounded-lg hover:bg-slate-300">
+                            <Copy size={20} />
+                        </button>
+                    </div>
+                </div>
+                <div className="mt-6">
+                    <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-transform hover:scale-105">
+                        <ExternalLink size={20} /> Go to Form
+                    </a>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
 const EditorPage = () => {
   const { formId } = useParams();
+  const navigate = useNavigate();
   const [formTitle, setFormTitle] = useState('Untitled Form');
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [savedFormId, setSavedFormId] = useState(null); // State for the modal
 
-  // THIS IS THE CORRECTED LOGIC
   useEffect(() => {
-    // Only fetch if the formId is real (not 'new')
     if (formId && formId !== 'new') {
       setLoading(true);
       const fetchForm = async () => {
         try {
-          // Use the correct live backend URL
-          const backendUrl = 'https://form-1-backend-1.onrender.com'; // Make sure this is your correct Render URL
+          const backendUrl = 'https://form-1-backend-1.onrender.com';
           const response = await fetch(`${backendUrl}/api/forms/${formId}`);
           if (!response.ok) throw new Error('Could not fetch form');
           const data = await response.json();
@@ -35,7 +72,7 @@ const EditorPage = () => {
     }
   }, [formId]);
 
-  // All other functions (createNewQuestion, addQuestion, etc.) remain the same
+  // ... (createNewQuestion, addQuestion, etc. functions remain the same)
   const createNewQuestion = (type) => {
     return {
         id: Date.now(),
@@ -78,8 +115,9 @@ const EditorPage = () => {
       });
     }
   };
+
   const saveForm = async () => { 
-      const backendUrl = 'https://form-1-backend-1.onrender.com'; // Make sure this is your correct Render URL
+      const backendUrl = 'https://form-1-backend-1.onrender.com';
       const formData = {
         title: formTitle,
         questions: questions,
@@ -87,16 +125,17 @@ const EditorPage = () => {
       try {
         const response = await fetch(`${backendUrl}/api/forms`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
         });
         const result = await response.json();
         if (!response.ok) {
           throw new Error(result.message || 'Something went wrong');
         }
-        alert(`Form saved successfully! Form ID: ${result.formId}`);
+        // Instead of alert, show the modal
+        setSavedFormId(result.formId);
+        // Update the URL to the new form's edit page
+        navigate(`/editor/${result.formId}`);
       } catch (error) {
         console.error('Failed to save form:', error);
         alert(`Error: ${error.message}`);
@@ -109,6 +148,7 @@ const EditorPage = () => {
 
   return (
     <div className="bg-slate-100 min-h-screen">
+      {savedFormId && <ShareModal formId={savedFormId} onClose={() => setSavedFormId(null)} />}
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
         <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200/50">
           <div className="flex flex-col md:flex-row justify-between items-center border-b border-slate-200 pb-6 mb-8">
